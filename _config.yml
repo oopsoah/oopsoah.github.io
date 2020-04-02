@@ -3,13 +3,13 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Hexo
+title: oah's blog
 subtitle: ''
 description: ''
-keywords:
-author: John Doe
-language: en
-timezone: ''
+keywords: angular, javascript, rxjs, frontend
+author: oah
+language: zh-TW
+timezone: 'UTC+08:00'
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'

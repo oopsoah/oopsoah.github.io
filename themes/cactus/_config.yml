@@ -5,7 +5,7 @@
 # Link to a page that gives an overview of all your projects.
 # This can be an external link (e.g., to you GitHub profile) or to another
 # page within your website.
-projects_url: http://github.com/probberechts
+projects_url: https://github.com/oopsoah
 
 # Set the page direction to RTL or LTR. default is LTR. (if you set it 'rtl', the 'vazir' font will be loaded.)
 direction: ltr
@@ -16,8 +16,8 @@ direction: ltr
 nav:
   home: /
   about: /about/
-  articles: /archives/
-  projects: projects_url
+  # articles: /archives/
+  # projects: projects_url
 
 
 # Links to your social media accounts.
@@ -26,10 +26,10 @@ nav:
 # only 'mail' is an exception.
 social_links:
   github: http://github.com/probberechts/cactus-dark
-  twitter: /
-  facebook: /
-  linkedin: /
-  mail: mailto:name@email.com
+  # twitter: /
+  # facebook: /
+  # linkedin: /
+  mail: mailto:oopsoah@gmail.com
 
 # Customize the overview with displaying a tagcloud on the index page.
 # Options: https://hexo.io/docs/helpers.html#tagcloud
@@ -62,7 +62,7 @@ post:
 # Customize the copyright years
 # Note: if start_year/end_year not provided, will use current year.
 copyright:
-  start_year: 2016
+  start_year: 2020
   end_year:
 
 ##############################################################################
@@ -153,4 +153,4 @@ baidu_analytics:
 # Fill in you Gravatar user id / email if you want to use your gravatar as the
 # logo and/or favicons of you website.
 gravatar:
-  email: name@email.com
+  email: oopsoah@gmail.com
