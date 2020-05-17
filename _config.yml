@@ -94,7 +94,8 @@ ignore:
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
 # theme: landscape
-theme: cactus
+# theme: cactus
+theme: next
 
 theme_config:
   colorscheme: white
