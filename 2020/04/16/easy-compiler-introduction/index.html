@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="前言編譯器一直都在你我每日的程式工作中，當然如果是資訊領域背景的，相信對編譯器並不會太陌生，早期大學時期寫過scheme這教育意義比較大的語言時，有了解編譯器實作，但時至今日沒有自己真的親手實過過。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="簡易編譯器原理介紹">
+<meta property="og:url" content="http://yoursite.com/2020/04/16/easy-compiler-introduction/index.html">
+<meta property="og:site_name" content="oah&#39;s blog">
+<meta property="og:description" content="前言編譯器一直都在你我每日的程式工作中，當然如果是資訊領域背景的，相信對編譯器並不會太陌生，早期大學時期寫過scheme這教育意義比較大的語言時，有了解編譯器實作，但時至今日沒有自己真的親手實過過。">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2020-04-16T14:05:16.000Z">
+<meta property="article:modified_time" content="2020-05-17T16:27:16.963Z">
+<meta property="article:author" content="oah">
+<meta property="article:tag" content="complier">
+<meta property="article:tag" content="javascript">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/04/16/easy-compiler-introduction/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-TW'
+  };
+</script>
+
+  <title>簡易編譯器原理介紹 | oah's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切換導航欄">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">oah's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首頁</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>標籤</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分類</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>歸檔</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-TW">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/04/16/easy-compiler-introduction/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="oah">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="oah's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          簡易編譯器原理介紹
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">發表於</span>
+
+              <time title="創建時間：2020-04-16 22:05:16" itemprop="dateCreated datePublished" datetime="2020-04-16T22:05:16+08:00">2020-04-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新於</span>
+                <time title="修改時間：2020-05-18 00:27:16" itemprop="dateModified" datetime="2020-05-18T00:27:16+08:00">2020-05-18</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分類於</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/program/" itemprop="url" rel="index"><span itemprop="name">program</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>編譯器一直都在你我每日的程式工作中，當然如果是資訊領域背景的，相信對編譯器並不會太陌生，早期大學時期寫過scheme這教育意義比較大的語言時，有了解編譯器實作，但時至今日沒有自己真的親手實過過。</p>
+<a id="more"></a>
+
+<h1 id="編譯步驟"><a href="#編譯步驟" class="headerlink" title="編譯步驟"></a>編譯步驟</h1><p>大多數的編譯器都有這三步驟</p>
+<ol>
+<li>Parsing - 將原始資料轉換為可以抽象表示。</li>
+<li>Transformation - 將抽象表示進行操作或轉換，轉換為你期待的結構。</li>
+<li>Code Generation - 透過轉換過的抽換結構，產出新的程式。</li>
+</ol>
+<h2 id="Parsing"><a href="#Parsing" class="headerlink" title="Parsing"></a>Parsing</h2><p>Parsing可分為兩個步驟，詞法分析(Lexical Analysis)和句法分析(Syntactic Analysis)。<br>詞法分析其實就是針對單個字進行解析，將單詞轉化為token。句分析則是將token組合出AST(Abstract Syntax Tree)。</p>
+<p>舉例以下詞句</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">(add 2(subtract 4 2))</span><br></pre></td></tr></table></figure>
+
+<p>Token如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[</span><br><span class="line">  &#123; type: &#39;paren&#39;,  value: &#39;(&#39;        &#125;,</span><br><span class="line">  &#123; type: &#39;name&#39;,   value: &#39;add&#39;      &#125;,</span><br><span class="line">  &#123; type: &#39;number&#39;, value: &#39;2&#39;        &#125;,</span><br><span class="line">  &#123; type: &#39;paren&#39;,  value: &#39;(&#39;        &#125;,</span><br><span class="line">  &#123; type: &#39;name&#39;,   value: &#39;subtract&#39; &#125;,</span><br><span class="line">  &#123; type: &#39;number&#39;, value: &#39;4&#39;        &#125;,</span><br><span class="line">  &#123; type: &#39;number&#39;, value: &#39;2&#39;        &#125;,</span><br><span class="line">  &#123; type: &#39;paren&#39;,  value: &#39;)&#39;        &#125;,</span><br><span class="line">  &#123; type: &#39;paren&#39;,  value: &#39;)&#39;        &#125;,</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<p>而AST則是如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  type: &#39;Program&#39;,</span><br><span class="line">  body: [&#123;</span><br><span class="line">    type: &#39;CallExpression&#39;,</span><br><span class="line">    name: &#39;add&#39;,</span><br><span class="line">    params: [&#123;</span><br><span class="line">      type: &#39;NumberLiteral&#39;,</span><br><span class="line">      value: &#39;2&#39;,</span><br><span class="line">    &#125;, &#123;</span><br><span class="line">      type: &#39;CallExpression&#39;,</span><br><span class="line">      name: &#39;subtract&#39;,</span><br><span class="line">      params: [&#123;</span><br><span class="line">        type: &#39;NumberLiteral&#39;,</span><br><span class="line">        value: &#39;4&#39;,</span><br><span class="line">      &#125;, &#123;</span><br><span class="line">        type: &#39;NumberLiteral&#39;,</span><br><span class="line">        value: &#39;2&#39;,</span><br><span class="line">      &#125;]</span><br><span class="line">    &#125;]</span><br><span class="line">  &#125;]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Transformation"><a href="#Transformation" class="headerlink" title="Transformation"></a>Transformation</h2><p>轉換只是對上一步的AST進行更改或置換，這個步驟是將原始AST可能改成新的語言格式進行的轉換，或是增加一些新的節點，可能增加前後括號？可能更改順序，可能刪除不必要節點等等..，這時候產出的新AST，就會是我們目標編譯語言可能的結構。</p>
+<h3 id="Traversal"><a href="#Traversal" class="headerlink" title="Traversal"></a>Traversal</h3><p>為了能到各節點，我們得能尋訪各節點，這也是必要的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  type: &#39;Program&#39;,</span><br><span class="line">  body: [&#123;</span><br><span class="line">    type: &#39;CallExpression&#39;,</span><br><span class="line">    name: &#39;add&#39;,</span><br><span class="line">    params: [&#123;</span><br><span class="line">      type: &#39;NumberLiteral&#39;,</span><br><span class="line">      value: &#39;2&#39;</span><br><span class="line">    &#125;, &#123;</span><br><span class="line">      type: &#39;CallExpression&#39;,</span><br><span class="line">      name: &#39;subtract&#39;,</span><br><span class="line">      params: [&#123;</span><br><span class="line">        type: &#39;NumberLiteral&#39;,</span><br><span class="line">        value: &#39;4&#39;</span><br><span class="line">      &#125;, &#123;</span><br><span class="line">        type: &#39;NumberLiteral&#39;,</span><br><span class="line">        value: &#39;2&#39;</span><br><span class="line">      &#125;]</span><br><span class="line">    &#125;]</span><br><span class="line">  &#125;]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上的結構呢，將會是以下的步驟尋訪。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1. Program - 從最上面的節點開始</span><br><span class="line">2. CallExpression (add) - 從第一個程式元素開始</span><br><span class="line">3. NumberLiteral (2) - 移動到參數的第一個元素</span><br><span class="line">4. CallExpression (subtract) - 移動到參數的第二個元素</span><br><span class="line">5. NumberLiteral (4) - 移動到參數的第一個元素</span><br><span class="line">6. NumberLiteral (2) - 移動到參數的第二個元素</span><br></pre></td></tr></table></figure>
+
+<h3 id="Visitors"><a href="#Visitors" class="headerlink" title="Visitors"></a>Visitors</h3><p>這邊呢基本上是創建一個Visitor的物件，這物件可接受不同節點類型。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">var visitor &#x3D; &#123;</span><br><span class="line">  NumberLiteral() &#123;&#125;,</span><br><span class="line">  CallExpression() &#123;&#125;,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>當我們在尋訪AST時，當我們輸入對應的類型時，我們可以呼叫visitor上對應的方法。</p>
+<p>為了更便於使用，再加上傳遞父節點的參考。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">var visitor &#x3D; &#123;</span><br><span class="line">  NumberLiteral(node, parent) &#123;&#125;,</span><br><span class="line">  CallExpression(node, parent) &#123;&#125;,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>當然我們一定有存在關閉的點。想像一下以下的樹狀結構。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">* Program</span><br><span class="line">  * CallExpression</span><br><span class="line">    * NumberLiteral</span><br><span class="line">    * CallExpression</span><br><span class="line">        * NumberLiteral</span><br><span class="line">        * NumberLiteral</span><br></pre></td></tr></table></figure>
+
+<p>其實也就是當我們走到那節點的終點時，我們會退回上一步，其實就是基本樹尋訪的基本知識而已。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">→ Program (enter)</span><br><span class="line">  → CallExpression (enter)</span><br><span class="line">    → NumberLiteral (enter)</span><br><span class="line">    ← NumberLiteral (exit)</span><br><span class="line">    → CallExpression (enter)</span><br><span class="line">      → NumberLiteral (enter)</span><br><span class="line">      ← NumberLiteral (exit)</span><br><span class="line">      → NumberLiteral (enter)</span><br><span class="line">      ← NumberLiteral (exit)</span><br><span class="line">    ← CallExpression (exit)</span><br><span class="line">  ← CallExpression (exit)</span><br><span class="line">← Program (exit)</span><br></pre></td></tr></table></figure>
+
+<p>為了實現退出，我們的visitor可能會長的這樣。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">var visitor &#x3D; &#123;</span><br><span class="line">  NumberLiteral: &#123;</span><br><span class="line">    enter(node, parent) &#123;&#125;,</span><br><span class="line">    exit(node, parent) &#123;&#125;,</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Code-Generation"><a href="#Code-Generation" class="headerlink" title="Code Generation"></a>Code Generation</h2><p>最後一階段就是產生程式碼，有時候會重疊到transformation的工作，但大部分Code Generation其實就是將AST產成代碼。</p>
+<p>程式碼產生器有很多不同種方式產程式碼，但大多都是用我們剛剛建好的AST進行。程式碼產生器，透過遞迴、迭代等等方式，最終將產出可運行的程式碼。</p>
+<h1 id="結論"><a href="#結論" class="headerlink" title="結論"></a>結論</h1><p>大體而言，其實就是語意轉為原始AST，再透過自訂規則轉為我們期待的AST，透過AST再輸出成可以執行的程式碼。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/complier/" rel="tag"># complier</a>
+              <a href="/tags/javascript/" rel="tag"># javascript</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/17/web-component-%E8%BC%95%E9%AC%86%E4%B8%8A%E6%89%8B/" rel="next" title="web component 輕鬆上手">
+      web component 輕鬆上手 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目錄
+        </li>
+        <li class="sidebar-nav-overview">
+          本站概要
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#編譯步驟"><span class="nav-number">2.</span> <span class="nav-text">編譯步驟</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Parsing"><span class="nav-number">2.1.</span> <span class="nav-text">Parsing</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Transformation"><span class="nav-number">2.2.</span> <span class="nav-text">Transformation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Traversal"><span class="nav-number">2.2.1.</span> <span class="nav-text">Traversal</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Visitors"><span class="nav-number">2.2.2.</span> <span class="nav-text">Visitors</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Code-Generation"><span class="nav-number">2.3.</span> <span class="nav-text">Code Generation</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#結論"><span class="nav-number">3.</span> <span class="nav-text">結論</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">oah</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-name">文章</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分類</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">標籤</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">oah</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 強力驅動
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
