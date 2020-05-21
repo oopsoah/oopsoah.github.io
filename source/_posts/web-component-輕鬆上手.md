@@ -25,7 +25,7 @@ Web Component由三項技術組成。
 透過`<template>, <scope>`等等元素，可以重複重用使用模板。
 
 
-## Custom Elements
+# Custom Elements
 
 * 建立自訂元素類別
   ### javascript
@@ -60,7 +60,7 @@ Web Component由三項技術組成。
 
     connectedCallback() {}
 
-    disconnectedCallback() {}
+    disconnectedCallback() {} 
 
     attributeChangedCallback() {}
   }
@@ -70,6 +70,29 @@ Web Component由三項技術組成。
 
 ## Shadow DOM
 
+* 用途
+  * 隔離DOM
+    組件DOM為獨立的，`document.querySelector()`並不會返回ShadowDOM中的節點。
+  * CSS作用域
+    Shadow內部定義的樣式不會與外部樣式汙染。
+  * 簡化CSS
+    因不會命名衝突或是互相汙染，所以CSS選擇器`Id/Class`無須擔心衝突。
+  * 重用組件
+    因封裝成獨立的聲明式組件，可方便重用。
+  * 開發效率
+    可以區分小區塊開發且完全獨立，在重用以及開發效率上得以提升。
+
+* 建立方式
+如何建立ShadowDOM呢？
+```javascript=
+const header = document.createElement('header');
+const shadowRoot = header.attachShadow({mode: 'open'});
+shadowRoot.innerHTML = '<h1>Hello Shadow DOM</h1>'; // Could also use appendChild().
+
+// header.shadowRoot === shadowRoot
+// shadowRoot.host === header
+```
+* 使用方式
 
 ## HTML Template
 
